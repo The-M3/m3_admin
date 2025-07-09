@@ -1,16 +1,21 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import { Roboto, Roboto_Condensed } from 'next/font/google'
+import { Providers } from "./providers";
+import { DashboardLayout } from "@/components/DashboardLayout";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const roboto = Roboto({
+  subsets: ['latin'],
+  weight: ['400', '700'], // choose available weights
+  variable: '--font-roboto', // optional for CSS custom property
+  display: 'swap',
+})
+const roboto_condensed = Roboto_Condensed({
+  subsets: ['latin'],
+  weight: ['400', '700'], // choose available weights
+  variable: '--font-roboto', // optional for CSS custom property
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -23,9 +28,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        {children}
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${roboto_condensed.className} ${roboto_condensed.variable}`}>
+        <Providers>
+          <DashboardLayout>
+            {children}
+          </DashboardLayout>
+        </Providers>
       </body>
     </html>
   );
