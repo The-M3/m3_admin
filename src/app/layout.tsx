@@ -31,9 +31,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${roboto_condensed.className} ${roboto_condensed.variable}`}>
         <Providers>
-          <DashboardLayout>
             {children}
-          </DashboardLayout>
         </Providers>
       </body>
     </html>
