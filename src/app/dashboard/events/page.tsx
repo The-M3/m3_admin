@@ -63,9 +63,9 @@ export default function EventsPage() {
       setEvents(data || []);
       setTotalCount(count || 0);
       setCurrentPage(page);
-    } catch (err: any) {
+    } catch (err: { message: string } | unknown) {
       console.error('Error fetching events:', err);
-      setError(err.message || 'Failed to fetch events');
+      setError((err as { message: string })?.message || 'Failed to fetch events');
       toast({
         title: 'Error',
         description: 'Failed to fetch events. Please try again.',

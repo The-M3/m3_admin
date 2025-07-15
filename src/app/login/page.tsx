@@ -11,17 +11,22 @@ import {
   VStack,
   Text,
   useColorModeValue,
-  Switch,
 } from '@chakra-ui/react'
-import { Formik, Form, Field, FormikHelpers } from 'formik'
+import { Formik, Form, Field, FormikHelpers, FieldProps } from 'formik'
 import * as Yup from 'yup'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import supabase from '../../../supabase-client'
 import { toast } from 'react-toastify'
 
+// Form data interface
+interface LoginFormValues {
+  email: string;
+  password: string;
+}
+
 // Validation schema using Yup
-const validationSchema = Yup.object({
+const validationSchema = Yup.object<LoginFormValues>({
   email: Yup.string()
     .email('Invalid email address')
     .required('Email is required'),
@@ -35,7 +40,7 @@ export default function LoginPage() {
   const borderColor = useColorModeValue('gray.200', 'gray.700')
   const [signupSuccessMsg, setSignupSuccessMsg] = useState('')
 
-  const handleSubmit = async (values: { email: string, password: string }, { setSubmitting }: FormikHelpers<{ email: string, password: string }>) => {
+  const handleSubmit = async (values: LoginFormValues, { setSubmitting }: FormikHelpers<LoginFormValues>) => {
     setSubmitting(true)
     try {
       if(isSignUpPage){
@@ -51,7 +56,6 @@ export default function LoginPage() {
         }
       } else if(!isSignUpPage){
         const { data, error } = await supabase.auth.signInWithPassword({ email: values.email, password: values.password })
-        console.log("data", data)
        
         if(error){
           console.log(error)
@@ -62,7 +66,8 @@ export default function LoginPage() {
         }
       }
     } catch (error) {
-      console.error(error)
+      console.error('Authentication error:', error)
+      toast.error('An unexpected error occurred. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -88,7 +93,7 @@ export default function LoginPage() {
               {isSignUpPage ? 'Please enter your email to signup': 'Please enter your email to continue'}
             </Text>
 
-            <Formik
+            <Formik<LoginFormValues>
               initialValues={{ email: '', password: '' }}
               validationSchema={validationSchema}
               onSubmit={handleSubmit}
@@ -97,9 +102,9 @@ export default function LoginPage() {
                 <Form style={{ width: '100%' }}>
                   <VStack spacing={4} width="100%">
                     <Field name="email">
-                      {({ field, form }: any) => (
+                      {({ field, form }: FieldProps<string, LoginFormValues>) => (
                         <FormControl
-                          isInvalid={form.errors.email && form.touched.email}
+                          isInvalid={!!(form.errors.email && form.touched.email)}
                         >
                           <FormLabel htmlFor="email">Email Address</FormLabel>
                           <Input
@@ -116,9 +121,9 @@ export default function LoginPage() {
                       )}
                     </Field>
                     <Field name="password">
-                      {({ field, form }: any) => (
+                      {({ field, form }: FieldProps<string, LoginFormValues>) => (
                         <FormControl
-                          isInvalid={form.errors.password && form.touched.password}
+                          isInvalid={!!(form.errors.password && form.touched.password)}
                         >
                           <FormLabel htmlFor="password">Password</FormLabel>
                           <Input

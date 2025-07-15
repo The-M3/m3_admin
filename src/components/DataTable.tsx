@@ -49,7 +49,7 @@ export function DataTable<TData>({
         <Table variant="simple" size="md">
           <Thead bg={headerBg}>
             {table.getHeaderGroups().map(headerGroup => <Tr key={headerGroup.id}>
-                {headerGroup.headers.map(header => <Th key={header.id} onClick={header.column.getToggleSortingHandler()} cursor={header.column.getCanSort() ? 'pointer' : 'default'} borderColor={borderColor}>
+                {headerGroup.headers.map(header => <Th key={header.id} onClick={header.column.getToggleSortingHandler()} cursor={header.column.getCanSort() ? 'pointer' : 'default'} borderColor={borderColor} whiteSpace="nowrap" >
                     <Flex alignItems="center">
                       {flexRender(header.column.columnDef.header, header.getContext())}
                       {header.column.getIsSorted() === 'asc' ? ' 🔼' : ''}
@@ -67,7 +67,7 @@ export function DataTable<TData>({
               }}
               onClick={() => onRowClick?.(row.original)}
             >
-                {row.getVisibleCells().map(cell => <Td key={cell.id} borderColor={borderColor}>
+                {row.getVisibleCells().map(cell => <Td key={cell.id} borderColor={borderColor} whiteSpace="nowrap">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </Td>)}
               </Tr>)}

@@ -1,16 +1,9 @@
 import type { Metadata } from "next";
-import { Roboto, Roboto_Condensed } from 'next/font/google'
+import { Roboto_Condensed } from 'next/font/google'
 import { Providers } from "./providers";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-
-const roboto = Roboto({
-  subsets: ['latin'],
-  weight: ['400', '700'], // choose available weights
-  variable: '--font-roboto', // optional for CSS custom property
-  display: 'swap',
-})
 const roboto_condensed = Roboto_Condensed({
   subsets: ['latin'],
   weight: ['400', '700'], // choose available weights
