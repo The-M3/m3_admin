@@ -1,15 +1,13 @@
 "use client"
-import React, { useState } from 'react';
-import { Box, Card, CardBody, Text, Badge, Flex, Button } from '@chakra-ui/react';
+import React, { useState, useEffect } from 'react';
+import { Box, Card, CardBody, Text, Badge, Flex, Button, Spinner, Alert, AlertIcon, useToast } from '@chakra-ui/react';
 import { PlusIcon } from 'lucide-react';
 
 import { createColumnHelper } from '@tanstack/react-table';
 import { DataTable } from '../../../components/DataTable';
 import { EventDetailsDrawer } from '../../../components/EventDetailsDrawer';
 import { CreateEventDrawer } from '../../../components/CreateEventDrawer';
-import { mockEventsData } from '../../../utils/mockData';
 import supabase from '../../../../supabase-client';
-import { toast } from 'react-toastify';
 import { Event } from '@/types';
 
 
@@ -17,6 +15,13 @@ export default function EventsPage() {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageSize] = useState(10);
+  const toast = useToast();
 
   const handleRowClick = (event: Event) => {
     setSelectedEvent(event);
@@ -37,9 +42,55 @@ export default function EventsPage() {
   };
 
   const handleEventCreated = async (newEvent: Event) => {
+    // Refresh the events list after creating a new event
+    await fetchEvents();
+    console.log("New event created", newEvent);
+  };
 
-    // TODO: update table / auto refresh table
-    console.log("New event created", newEvent)
+  const fetchEvents = async (page: number = 0) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const from = page * pageSize;
+      const to = from + pageSize - 1;
+      
+      // Fetch events with pagination
+      const { data, error, count } = await supabase
+        .from('events')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(from, to);
+      
+      if (error) {
+        throw error;
+      }
+      
+      setEvents(data || []);
+      setTotalCount(count || 0);
+      setCurrentPage(page);
+    } catch (err: any) {
+      console.error('Error fetching events:', err);
+      setError(err.message || 'Failed to fetch events');
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch events. Please try again.',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch events on component mount
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const handlePageChange = (newPage: number) => {
+    fetchEvents(newPage);
   };
 
   const formatDate = (date: Date) => {
@@ -124,11 +175,26 @@ export default function EventsPage() {
       </Flex>
       <Card variant="outline">
         <CardBody>
-          <DataTable 
-            columns={columns} 
-            data={mockEventsData} 
-            onRowClick={handleRowClick}
-          />
+          {loading ? (
+            <Flex justify="center" align="center" minH="200px">
+              <Spinner size="lg" color="green.500" />
+            </Flex>
+          ) : error ? (
+            <Alert status="error">
+              <AlertIcon />
+              {error}
+            </Alert>
+          ) : (
+            <DataTable 
+              columns={columns} 
+              data={events} 
+              onRowClick={handleRowClick}
+              totalCount={totalCount}
+              currentPage={currentPage}
+              pageSize={pageSize}
+              onPageChange={handlePageChange}
+            />
+          )}
         </CardBody>
       </Card>
       
@@ -136,6 +202,7 @@ export default function EventsPage() {
         isOpen={isDrawerOpen}
         onClose={handleDrawerClose}
         event={selectedEvent}
+        onEventUpdated={fetchEvents}
       />
       
       <CreateEventDrawer

@@ -7,18 +7,28 @@ interface DataTableProps<TData> {
   data: TData[];
   columns: ColumnDef<TData, any>[];
   onRowClick?: (row: TData) => void;
+  totalCount?: number;
+  currentPage?: number;
+  pageSize?: number;
+  onPageChange?: (page: number) => void;
 }
 export function DataTable<TData>({
   data,
   columns,
-  onRowClick
+  onRowClick,
+  totalCount,
+  currentPage = 0,
+  pageSize = 10,
+  onPageChange
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>([]);
+  const isServerSidePagination = totalCount !== undefined && onPageChange !== undefined;
+  
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    getPaginationRowModel: isServerSidePagination ? undefined : getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     onSortingChange: setSorting,
     state: {
@@ -26,9 +36,11 @@ export function DataTable<TData>({
     },
     initialState: {
       pagination: {
-        pageSize: 10
+        pageSize: pageSize
       }
-    }
+    },
+    manualPagination: isServerSidePagination,
+    pageCount: isServerSidePagination ? Math.ceil((totalCount || 0) / pageSize) : undefined
   });
   const headerBg = useColorModeValue('gray.50', 'gray.700');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
@@ -65,29 +77,61 @@ export function DataTable<TData>({
       <Flex justifyContent="space-between" alignItems="center" mt={4} flexWrap="wrap" gap={2}>
         <HStack>
           <Text fontSize="sm">
-            Showing{' '}
-            {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}{' '}
-            to{' '}
-            {Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, table.getRowCount())}{' '}
-            of {table.getRowCount()} entries
+            {isServerSidePagination ? (
+              <>Showing {currentPage * pageSize + 1} to {Math.min((currentPage + 1) * pageSize, totalCount || 0)} of {totalCount || 0} entries</>
+            ) : (
+              <>Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to {Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, table.getRowCount())} of {table.getRowCount()} entries</>
+            )}
           </Text>
-          <Select size="sm" value={table.getState().pagination.pageSize} onChange={e => {
-          table.setPageSize(Number(e.target.value));
-        }} width="80px">
-            {[5, 10, 20, 30, 40, 50].map(pageSize => <option key={pageSize} value={pageSize}>
-                {pageSize}
-              </option>)}
-          </Select>
+          {!isServerSidePagination && (
+            <Select
+              size="sm"
+              value={table.getState().pagination.pageSize}
+              onChange={(e) => {
+                table.setPageSize(Number(e.target.value));
+              }}
+              width="80px"
+            >
+              {[5, 10, 20, 30, 40, 50].map((pageSize) => (
+                <option key={pageSize} value={pageSize}>
+                  {pageSize}
+                </option>
+              ))}
+            </Select>
+          )}
         </HStack>
         <HStack>
-          <Button size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
+          <Button
+            size="sm"
+            onClick={() => {
+              if (isServerSidePagination) {
+                onPageChange?.(currentPage - 1);
+              } else {
+                table.previousPage();
+              }
+            }}
+            disabled={isServerSidePagination ? currentPage === 0 : !table.getCanPreviousPage()}
+          >
             Previous
           </Button>
           <Text fontSize="sm">
-            Page {table.getState().pagination.pageIndex + 1} of{' '}
-            {table.getPageCount()}
+            Page {(isServerSidePagination ? currentPage : table.getState().pagination.pageIndex) + 1} of{' '}
+            {isServerSidePagination ? Math.ceil((totalCount || 0) / pageSize) : table.getPageCount()}
           </Text>
-          <Button size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+          <Button
+            size="sm"
+            onClick={() => {
+              if (isServerSidePagination) {
+                onPageChange?.(currentPage + 1);
+              } else {
+                table.nextPage();
+              }
+            }}
+            disabled={isServerSidePagination ? 
+              currentPage >= Math.ceil((totalCount || 0) / pageSize) - 1 : 
+              !table.getCanNextPage()
+            }
+          >
             Next
           </Button>
         </HStack>

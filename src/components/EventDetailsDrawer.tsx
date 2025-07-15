@@ -9,24 +9,42 @@ import {
   Box,
   Button,
   useColorModeValue,
-  Link
+  Link,
+  useToast,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
+  useDisclosure
 } from '@chakra-ui/react';
+import { useRef, useState } from 'react';
 import { Drawer } from './Drawer';
+import { EditEventDrawer } from './EditEventDrawer';
 import { Event } from '@/types';
+import supabase from '../../supabase-client';
 
 interface EventDetailsDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   event: Event | null;
+  onEventUpdated?: () => void;
 }
 
 export function EventDetailsDrawer({
   isOpen,
   onClose,
-  event
+  event,
+  onEventUpdated
 }: EventDetailsDrawerProps) {
   const labelColor = useColorModeValue('gray.600', 'gray.400');
   const valueColor = useColorModeValue('gray.900', 'white');
+  const toast = useToast();
+  const { isOpen: isAlertOpen, onOpen: onAlertOpen, onClose: onAlertClose } = useDisclosure();
+  const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
+  const [isUpdating, setIsUpdating] = useState(false);
+  const cancelRef = useRef<HTMLButtonElement>(null);
 
   if (!event) return null;
 
@@ -41,21 +59,73 @@ export function EventDetailsDrawer({
     });
   };
 
-  const footer = (
-    <HStack spacing={3}>
-      <Button variant="outline" onClick={onClose}>
-        Close
-      </Button>
-      <Button colorScheme="blue">
-        Edit Event
-      </Button>
-      {event.ticketLink && (
-        <Button as={Link} href={event.ticketLink} colorScheme="green" isExternal>
-          View Tickets
-        </Button>
-      )}
-    </HStack>
-  );
+  const handleCancelEvent = async () => {
+    if (!event?.id) return;
+    
+    setIsUpdating(true);
+    try {
+      const { error } = await supabase
+        .from('events')
+        .update({ 
+          hasEnded: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', event.id);
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: 'Event Cancelled',
+        description: `"${event.title}" has been cancelled successfully.`,
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+
+      // Call the callback to refresh the events list
+      onEventUpdated?.();
+      
+      // Close the drawer
+      onClose();
+    } catch (error: any) {
+      console.error('Error cancelling event:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to cancel event. Please try again.',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setIsUpdating(false);
+      onAlertClose();
+    }
+  };
+
+  const handleEventUpdated = (updatedEvent: Event) => {
+    // Call the callback to refresh the events list
+    onEventUpdated?.();
+    // Close the edit drawer
+    onEditClose();
+  };
+
+  // const footer = (
+  //   <HStack spacing={3}>
+  //     <Button variant="outline" onClick={onClose}>
+  //       Close
+  //     </Button>
+  //     <Button colorScheme="blue">
+  //       Edit Event
+  //     </Button>
+  //     {event.ticketLink && (
+  //       <Button as={Link} href={event.ticketLink} colorScheme="green" isExternal>
+  //         View Tickets
+  //       </Button>
+  //     )}
+  //   </HStack>
+  // );
 
   return (
     <Drawer
@@ -63,7 +133,7 @@ export function EventDetailsDrawer({
       onClose={onClose}
       title="Event Details"
       size="lg"
-      footer={footer}
+      // footer={footer}
     >
       <VStack spacing={6} align="stretch">
         <Box>
@@ -166,14 +236,29 @@ export function EventDetailsDrawer({
             Quick Actions
           </Text>
           <VStack spacing={2} align="stretch">
-            <Button size="sm" variant="outline" colorScheme="blue">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              colorScheme="blue"
+              onClick={onEditOpen}
+              // isDisabled={event.hasEnded}
+            >
+              Edit Event
+            </Button>
+            {/* <Button size="sm" variant="outline" colorScheme="orange">
               Send Reminder
             </Button>
-            <Button size="sm" variant="outline" colorScheme="orange">
+            <Button size="sm" variant="outline" colorScheme="green">
               Export Attendees
-            </Button>
-            <Button size="sm" variant="outline" colorScheme="red">
-              Cancel Event
+            </Button> */}
+            <Button 
+              size="sm" 
+              variant="outline" 
+              colorScheme="red"
+              onClick={onAlertOpen}
+              isDisabled={event.hasEnded}
+            >
+              {event.hasEnded ? 'Event Cancelled' : 'Cancel Event'}
             </Button>
           </VStack>
         </Box>
@@ -187,6 +272,46 @@ export function EventDetailsDrawer({
           </HStack>
         </Box>
       </VStack>
+      
+      <AlertDialog
+        isOpen={isAlertOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={onAlertClose}
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              Cancel Event
+            </AlertDialogHeader>
+
+            <AlertDialogBody>
+              Are you sure you want to cancel "{event.title}"? This action will mark the event as ended and cannot be undone.
+            </AlertDialogBody>
+
+            <AlertDialogFooter>
+              <Button ref={cancelRef} onClick={onAlertClose}>
+                Keep Event
+              </Button>
+              <Button 
+                colorScheme="red" 
+                onClick={handleCancelEvent}
+                ml={3}
+                isLoading={isUpdating}
+                loadingText="Cancelling..."
+              >
+                Cancel Event
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
+      
+      <EditEventDrawer
+        isOpen={isEditOpen}
+        onClose={onEditClose}
+        event={event}
+        onEventUpdated={handleEventUpdated}
+      />
     </Drawer>
   );
 }
