@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Roboto, Roboto_Condensed } from 'next/font/google'
 import { Providers } from "./providers";
-import { DashboardLayout } from "@/components/DashboardLayout";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 
 const roboto = Roboto({
@@ -32,6 +33,7 @@ export default function RootLayout({
       <body className={`${roboto_condensed.className} ${roboto_condensed.variable}`}>
         <Providers>
             {children}
+            <ToastContainer />
         </Providers>
       </body>
     </html>

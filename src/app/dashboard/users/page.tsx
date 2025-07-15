@@ -2,8 +2,8 @@
 import React from 'react';
 import { Box, Card, CardBody, Heading, Text } from '@chakra-ui/react';
 import { createColumnHelper } from '@tanstack/react-table';
-import { DataTable } from '../../components/DataTable';
-import { mockUsers } from '../../utils/mockData';
+import { DataTable } from '../../../components/DataTable';
+import { mockUsers } from '../../../utils/mockData';
 type User = {
   id: string;
   name: string;
