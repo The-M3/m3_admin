@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { Box, Flex, Icon, Link, Text, VStack, Button } from '@chakra-ui/react';
+import { Box, Flex, Icon, Link, Text, VStack } from '@chakra-ui/react';
 import { usePathname } from 'next/navigation';
 import { UsersIcon, CalendarIcon, LogOutIcon } from 'lucide-react';
 import Image from 'next/image';
@@ -12,11 +12,11 @@ export function Sidebar() {
   const router = useRouter()
   const navItems = [{
     name: 'Users',
-    path: '/users',
+    path: '/dashboard/users',
     icon: UsersIcon
   }, {
     name: 'Events',
-    path: '/events',
+    path: '/dashboard/events',
     icon: CalendarIcon
   }];
 

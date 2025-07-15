@@ -1,5 +1,5 @@
-interface Event {
-    id: string;              // UUID, auto-generated
+export interface Event {
+    id?: string;              // UUID, auto-generated
     title: string;           // Required
     location: string;        // Required
     startDateTime: Date;     // Required
@@ -9,6 +9,6 @@ interface Event {
     isVirtual: boolean;      // Default: false
     ticketLink?: string;     // Optional
     hasEnded: boolean;       // Default: false
-    created_at: Date;         // Auto-generated
-    updated_at: Date;         // Auto-generated
+    created_at?: Date;         // Auto-generated
+    updated_at?: Date;         // Auto-generated
   }

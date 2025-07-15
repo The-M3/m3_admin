@@ -20,7 +20,7 @@ export function ProtectedRoute({
       if (currentSession.error) {
         console.error('Error fetching session:', currentSession.error)
       } else if (currentSession.data.session) {
-        router.push('/dashboard/users')
+        // router.push('/dashboard/users')
       } else if (!currentSession.data.session) {
         router.push('/login')
       }

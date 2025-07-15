@@ -84,7 +84,74 @@ export const mockUsers = [{
   status: 'Active',
   lastActive: 'Yesterday at 2:00 PM'
 }];
-// Mock data for events
+
+// Mock data for events (matching Event interface from types.ts)
+export const mockEventsData = [{
+  id: '1',
+  title: 'Annual Tech Conference 2024',
+  location: 'San Francisco Convention Center',
+  startDateTime: new Date('2024-03-15T09:00:00'),
+  timezone: 'PST',
+  description: 'Join us for the biggest tech conference of the year featuring industry leaders, innovative workshops, and networking opportunities.',
+  speakers: ['John Doe', 'Jane Smith', 'Alex Johnson'],
+  isVirtual: false,
+  ticketLink: 'https://tickets.example.com/tech-conf-2024',
+  hasEnded: false,
+  created_at: new Date('2024-01-15T10:00:00'),
+  updated_at: new Date('2024-02-01T14:30:00')
+}, {
+  id: '2',
+  title: 'Virtual Product Launch',
+  location: 'Online Event',
+  startDateTime: new Date('2024-02-28T14:00:00'),
+  timezone: 'EST',
+  description: 'Exclusive virtual launch event for our latest product line. Get first access to new features and special pricing.',
+  speakers: ['Sarah Wilson', 'Mike Chen'],
+  isVirtual: true,
+  ticketLink: 'https://tickets.example.com/product-launch',
+  hasEnded: true,
+  created_at: new Date('2024-01-10T09:00:00'),
+  updated_at: new Date('2024-02-25T16:00:00')
+}, {
+  id: '3',
+  title: 'Developer Workshop: React Best Practices',
+  location: 'Austin Tech Hub',
+  startDateTime: new Date('2024-04-10T10:00:00'),
+  timezone: 'CST',
+  description: 'Hands-on workshop covering advanced React patterns, performance optimization, and modern development practices.',
+  speakers: ['Emma Davis', 'Tom Rodriguez'],
+  isVirtual: false,
+  hasEnded: false,
+  created_at: new Date('2024-02-01T11:00:00'),
+  updated_at: new Date('2024-02-15T13:45:00')
+}, {
+  id: '4',
+  title: 'Customer Success Webinar',
+  location: 'Zoom Meeting',
+  startDateTime: new Date('2024-03-05T15:00:00'),
+  timezone: 'EST',
+  description: 'Learn how our top customers are achieving success with our platform. Real case studies and actionable insights.',
+  speakers: ['Lisa Park', 'David Kim'],
+  isVirtual: true,
+  hasEnded: false,
+  created_at: new Date('2024-01-20T08:30:00'),
+  updated_at: new Date('2024-02-28T10:15:00')
+}, {
+  id: '5',
+  title: 'AI & Machine Learning Summit',
+  location: 'Seattle Convention Center',
+  startDateTime: new Date('2024-05-20T08:30:00'),
+  timezone: 'PST',
+  description: 'Explore the latest trends in AI and ML with industry experts. Deep dive sessions on practical applications and future trends.',
+  speakers: ['Dr. Amanda Foster', 'Prof. James Liu', 'Rachel Green'],
+  isVirtual: false,
+  ticketLink: 'https://tickets.example.com/ai-summit-2024',
+  hasEnded: false,
+  created_at: new Date('2024-01-05T12:00:00'),
+  updated_at: new Date('2024-02-20T09:30:00')
+}];
+
+// Legacy mock events data (keeping for backward compatibility)
 export const mockEvents = [{
   id: '1',
   name: 'Annual Conference 2023',

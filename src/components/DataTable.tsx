@@ -6,10 +6,12 @@ import { useReactTable, getCoreRowModel, getPaginationRowModel, getSortedRowMode
 interface DataTableProps<TData> {
   data: TData[];
   columns: ColumnDef<TData, any>[];
+  onRowClick?: (row: TData) => void;
 }
 export function DataTable<TData>({
   data,
-  columns
+  columns,
+  onRowClick
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const table = useReactTable({
@@ -45,9 +47,14 @@ export function DataTable<TData>({
               </Tr>)}
           </Thead>
           <Tbody>
-            {table.getRowModel().rows.map(row => <Tr key={row.id} _hover={{
-            bg: 'gray.50'
-          }}>
+            {table.getRowModel().rows.map(row => <Tr 
+              key={row.id} 
+              _hover={{
+                bg: useColorModeValue('gray.50', 'gray.700'),
+                cursor: onRowClick ? 'pointer' : 'default'
+              }}
+              onClick={() => onRowClick?.(row.original)}
+            >
                 {row.getVisibleCells().map(cell => <Td key={cell.id} borderColor={borderColor}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </Td>)}
