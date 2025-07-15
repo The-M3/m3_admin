@@ -30,7 +30,7 @@ const validationSchema = Yup.object({
 })
 
 export default function LoginPage() {
-  const [isSignUpPage, setIsSignUpPage] = useState(true)
+  const [isSignUpPage, setIsSignUpPage] = useState(false)
   const router = useRouter()
   const borderColor = useColorModeValue('gray.200', 'gray.700')
   const [signupSuccessMsg, setSignupSuccessMsg] = useState('')
