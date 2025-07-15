@@ -41,12 +41,6 @@ export default function EventsPage() {
     setIsCreateDrawerOpen(false);
   };
 
-  const handleEventCreated = async (newEvent: Event) => {
-    // Refresh the events list after creating a new event
-    await fetchEvents();
-    console.log("New event created", newEvent);
-  };
-
   const fetchEvents = async (page: number = 0) => {
     try {
       setLoading(true);
@@ -83,6 +77,12 @@ export default function EventsPage() {
       setLoading(false);
     }
   };
+
+  const handleEventCreated = async (newEvent: Event) => {
+    console.log("New event created", newEvent);
+    fetchEvents();
+  };
+
 
   // Fetch events on component mount
   useEffect(() => {

@@ -152,11 +152,11 @@ export function CreateEventDrawer({
         hasEnded: false,
       };
 
-      onEventCreated?.(newEvent);
-
-      const { data, error } = await supabase.from('events').insert([newEvent])
+      // Insert into database first
+      const { data, error } = await supabase.from('events').insert([newEvent]).select();
+      
       if (error) {
-        console.error('Error creating event:', error)
+        console.error('Error creating event:', error);
         toast({
           title: 'Error',
           description: `${error.message}`,
@@ -164,24 +164,29 @@ export function CreateEventDrawer({
           duration: 3000,
           isClosable: true,
         });
-
-      } else {
-        console.log('Event created successfully:', data)
-        toast({
-          title: 'Event Created',
-          description: `"${newEvent.title}" has been created successfully.`,
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
+        return;
       }
 
-
+      console.log('Event created successfully:', data);
+      
+      // Only call onEventCreated after successful database insert
+      if (data && data[0]) {
+        onEventCreated?.(data[0] as Event);
+      }
+      
+      toast({
+        title: 'Event Created',
+        description: `"${newEvent.title}" has been created successfully.`,
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
 
       // Reset form and close drawer
       resetForm();
       onClose();
     } catch (error) {
+      console.error('Error creating event:', error);
       toast({
         title: 'Error',
         description: 'Failed to create event. Please try again.',

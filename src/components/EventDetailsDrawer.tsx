@@ -42,9 +42,11 @@ export function EventDetailsDrawer({
   const valueColor = useColorModeValue('gray.900', 'white');
   const toast = useToast();
   const { isOpen: isAlertOpen, onOpen: onAlertOpen, onClose: onAlertClose } = useDisclosure();
+  const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
   const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
   const [isUpdating, setIsUpdating] = useState(false);
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const deleteRef = useRef<HTMLButtonElement>(null);
 
   if (!event) return null;
 
@@ -68,7 +70,6 @@ export function EventDetailsDrawer({
         .from('events')
         .update({ 
           hasEnded: true,
-          updated_at: new Date().toISOString()
         })
         .eq('id', event.id);
 
@@ -101,6 +102,48 @@ export function EventDetailsDrawer({
     } finally {
       setIsUpdating(false);
       onAlertClose();
+    }
+  };
+
+  const handleDeleteEvent = async () => {
+    if (!event?.id) return;
+    
+    setIsUpdating(true);
+    try {
+      const { error } = await supabase
+        .from('events')
+        .delete()
+        .eq('id', event.id);
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: 'Event Deleted',
+        description: `"${event.title}" has been deleted successfully.`,
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+
+      // Call the callback to refresh the events list
+      onEventUpdated?.();
+      
+      // Close the drawer
+      onClose();
+    } catch (error: any) {
+      console.error('Error deleting event:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to delete event. Please try again.',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setIsUpdating(false);
+      onDeleteClose();
     }
   };
 
@@ -241,7 +284,7 @@ export function EventDetailsDrawer({
               variant="outline" 
               colorScheme="blue"
               onClick={onEditOpen}
-              // isDisabled={event.hasEnded}
+              isDisabled={event.hasEnded}
             >
               Edit Event
             </Button>
@@ -259,6 +302,14 @@ export function EventDetailsDrawer({
               isDisabled={event.hasEnded}
             >
               {event.hasEnded ? 'Event Cancelled' : 'Cancel Event'}
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              colorScheme="red"
+              onClick={onDeleteOpen}
+            >
+              Delete Event
             </Button>
           </VStack>
         </Box>
@@ -300,6 +351,39 @@ export function EventDetailsDrawer({
                 loadingText="Cancelling..."
               >
                 Cancel Event
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
+      
+      <AlertDialog
+        isOpen={isDeleteOpen}
+        leastDestructiveRef={deleteRef}
+        onClose={onDeleteClose}
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              Delete Event
+            </AlertDialogHeader>
+
+            <AlertDialogBody>
+              Are you sure you want to delete "{event.title}"? This action will delete the event and cannot be undone.
+            </AlertDialogBody>
+
+            <AlertDialogFooter>
+              <Button ref={deleteRef} onClick={onDeleteClose}>
+                Keep Event
+              </Button>
+              <Button 
+                colorScheme="red" 
+                onClick={handleDeleteEvent}
+                ml={3}
+                isLoading={isUpdating}
+                loadingText="Deleting..."
+              >
+                Delete Event
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>
