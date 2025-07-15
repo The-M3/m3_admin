@@ -47,7 +47,7 @@ export default function LoginPage() {
         } else {
           toast.success("User created successfully")
           setSignupSuccessMsg("Confirm your email to continue")
-          data.session && router.push('/dashboard/users')
+          data.session && router.push('/dashboard/events')
         }
       } else if(!isSignUpPage){
         const { data, error } = await supabase.auth.signInWithPassword({ email: values.email, password: values.password })
@@ -58,7 +58,7 @@ export default function LoginPage() {
           toast.error(error.message)
         } else {
           toast.success("User logged in successfully")
-          data.session && router.push('/dashboard/users')
+          data.session && router.push('/dashboard/events')
         }
       }
     } catch (error) {

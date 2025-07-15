@@ -11,10 +11,6 @@ export function Sidebar() {
   const location = usePathname();
   const router = useRouter()
   const navItems = [{
-    name: 'Users',
-    path: '/dashboard/users',
-    icon: UsersIcon
-  }, {
     name: 'Events',
     path: '/dashboard/events',
     icon: CalendarIcon

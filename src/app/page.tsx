@@ -11,7 +11,7 @@ export default function Home() {
 
   useEffect(() => {
     if(session){
-      router.push('/dashboard/users')
+      router.push('/dashboard/events')
     } else {
       router.push('/login')
     }
