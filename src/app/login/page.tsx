@@ -90,7 +90,7 @@ export default function LoginPage() {
             </Heading>
             {signupSuccessMsg && <Text color="green.500" textAlign="center">{signupSuccessMsg}</Text>}
             <Text color="gray.600" textAlign="center">
-              {isSignUpPage ? 'Please enter your email to signup': 'Please enter your email to continue'}
+              {isSignUpPage ? 'Please enter your credentials to signup': 'Please enter your credentials to continue'}
             </Text>
 
             <Formik<LoginFormValues>
