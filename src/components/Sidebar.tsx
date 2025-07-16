@@ -1,13 +1,31 @@
 'use client';
 import React from 'react';
-import { Box, Flex, Icon, Link, Text, VStack } from '@chakra-ui/react';
+import { 
+  Box, 
+  Flex, 
+  Icon, 
+  Link, 
+  Text, 
+  VStack, 
+  Drawer,
+  DrawerBody,
+  DrawerOverlay,
+  DrawerContent,
+  DrawerCloseButton
+} from '@chakra-ui/react';
 import { usePathname } from 'next/navigation';
 import { UsersIcon, CalendarIcon, LogOutIcon } from 'lucide-react';
 import Image from 'next/image';
 import supabase from '../../supabase-client';
 import { useRouter } from 'next/navigation';
 
-export function Sidebar() {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+  isMobile?: boolean;
+}
+
+export function Sidebar({ isOpen = false, onClose = () => {}, isMobile = false }: SidebarProps) {
   const location = usePathname();
   const router = useRouter()
   const navItems = [{
@@ -25,53 +43,111 @@ export function Sidebar() {
     }
   }
 
-  return <Box width={{
-    base: '70px',
-    lg: '240px'
-  }} bg="#243c23" borderRight="1px" borderColor="gray.200" height="100vh" position="sticky" top="0" py={4} display="flex" flexDirection="column">
-    <Flex px={4} mb={8} alignItems="center" justifyContent={{
-      base: 'center',
-      lg: 'flex-start'
-    }}>
-      <Image
-        src="/svgs/appIcon.svg"
-        alt="The M3"
-        width={80}
-        height={40}
-        priority
-      />
-      {/* <Text fontWeight="bold" fontSize="xl" ml={2} display={{
-        base: 'none',
-        lg: 'block'
+  const sidebarContent = (
+    <Box 
+      bg="#243c23" 
+      height="100vh" 
+      py={4} 
+      display="flex" 
+      flexDirection="column"
+      width="100%"
+    >
+      <Flex px={4} mb={8} alignItems="center" justifyContent={{
+        base: 'center',
+        lg: 'flex-start'
       }}>
-        Dashboard
-      </Text> */}
-    </Flex>
-    <VStack spacing={1} align="stretch">
-      {navItems.map(item => <Link as={Link} href={item.path} key={item.path} display="flex" alignItems="center" px={4} py={3} textDecoration="none" color="white" bg={location === item.path ? '#3a6538' : 'transparent'} _hover={{
-        bg: '#3a6538'
-      }}>
-        <Icon as={item.icon} boxSize={5} />
+        <Image
+          src="/svgs/appIcon.svg"
+          alt="The M3"
+          width={80}
+          height={40}
+          priority
+        />
+      </Flex>
+      <VStack spacing={1} align="stretch">
+        {navItems.map(item => (
+          <Link 
+            as={Link} 
+            href={item.path} 
+            key={item.path} 
+            display="flex" 
+            alignItems="center" 
+            px={4} 
+            py={3} 
+            textDecoration="none" 
+            color="white" 
+            bg={location === item.path ? '#3a6538' : 'transparent'} 
+            _hover={{
+              bg: '#3a6538'
+            }}
+            onClick={isMobile ? onClose : undefined}
+          >
+            <Icon as={item.icon} boxSize={5} />
+            <Text ml={3} display={{
+              base: isMobile ? 'block' : 'none',
+              lg: 'block'
+            }}>
+              {item.name}
+            </Text>
+          </Link>
+        ))}
+      </VStack>
+
+      <Box 
+        mb={16} 
+        marginTop="auto" 
+        cursor="pointer" 
+        display="flex" 
+        alignItems="center" 
+        px={4} 
+        py={3} 
+        textDecoration="none" 
+        color="white" 
+        _hover={{
+          bg: '#3a6538'
+        }} 
+        onClick={() => {
+          logout();
+          if (isMobile) onClose();
+        }}
+      >
+        <Icon as={LogOutIcon} boxSize={5} />
         <Text ml={3} display={{
-          base: 'none',
+          base: isMobile ? 'block' : 'none',
           lg: 'block'
         }}>
-          {item.name}
+          Logout
         </Text>
-      </Link>)}
-    </VStack>
-
-    <Box mb={16} marginTop="auto" cursor="pointer" display="flex" alignItems="center" px={4} py={3} textDecoration="none" color="white" _hover={{
-      bg: '#3a6538'
-    }} onClick={logout}>
-      <Icon as={LogOutIcon} boxSize={5} />
-      <Text ml={3} display={{
-        base: 'none',
-        lg: 'block'
-      }}>
-        Logout
-      </Text>
+      </Box>
     </Box>
+  );
 
-  </Box>;
+  if (isMobile) {
+    return (
+      <Drawer isOpen={isOpen} placement="left" onClose={onClose}>
+        <DrawerOverlay />
+        <DrawerContent maxWidth="280px">
+          <DrawerCloseButton color="white" zIndex={1} />
+          <DrawerBody p={0}>
+            {sidebarContent}
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
+  return (
+    <Box 
+      width={{
+        base: '70px',
+        lg: '240px'
+      }} 
+      borderRight="1px" 
+      borderColor="gray.200" 
+      position="sticky" 
+      top="0"
+    >
+      {sidebarContent}
+    </Box>
+  );
 }

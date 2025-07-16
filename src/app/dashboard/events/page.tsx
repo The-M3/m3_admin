@@ -1,6 +1,6 @@
 "use client"
 import React, { useState, useEffect } from 'react';
-import { Box, Card, CardBody, Text, Badge, Flex, Button, Spinner, Alert, AlertIcon, useToast } from '@chakra-ui/react';
+import { Box, Card, CardBody, Text, Badge, Flex, Button, Spinner, Alert, AlertIcon, useToast, useBreakpointValue } from '@chakra-ui/react';
 import { PlusIcon } from 'lucide-react';
 
 import { createColumnHelper } from '@tanstack/react-table';
@@ -22,6 +22,8 @@ export default function EventsPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [pageSize] = useState(10);
   const toast = useToast();
+  const isMobile = useBreakpointValue({ base: true, md: false });
+  
 
   const handleRowClick = (event: Event) => {
     setSelectedEvent(event);
@@ -174,7 +176,7 @@ export default function EventsPage() {
         </Button>
       </Flex>
       <Card variant="outline">
-        <CardBody>
+        <CardBody {...(isMobile ? { p: 2 } : {})}>
           {loading ? (
             <Flex justify="center" align="center" minH="200px">
               <Spinner size="lg" color="green.500" />
