@@ -94,7 +94,7 @@ export function Sidebar({ isOpen = false, onClose = () => {}, isMobile = false }
       </VStack>
 
       <Box 
-        mb={16} 
+        mb={isMobile ? 36 : 16} 
         marginTop="auto" 
         cursor="pointer" 
         display="flex" 
