@@ -63,7 +63,7 @@ export function CreateEventDrawer({
     title: '',
     location: '',
     startDateTime: '',
-    timezone: 'EST',
+    timezone: 'WAT',
     description: '',
     speakers: [],
     isVirtual: false,
@@ -73,7 +73,7 @@ export function CreateEventDrawer({
   const [errors, setErrors] = useState<FormErrors>({});
 
   const timezones = [
-    'EST', 'CST', 'MST', 'PST', 'GMT', 'CET', 'JST', 'AEST'
+    'WAT','EST', 'CST', 'MST', 'PST', 'GMT', 'CET', 'JST', 'AEST'
   ];
 
   const validateForm = (): boolean => {
