@@ -17,7 +17,8 @@ import {
   AlertDialogHeader,
   AlertDialogContent,
   AlertDialogOverlay,
-  useDisclosure
+  useDisclosure,
+  Image
 } from '@chakra-ui/react';
 import { useRef, useState } from 'react';
 import { Drawer } from './Drawer';
@@ -63,12 +64,12 @@ export function EventDetailsDrawer({
 
   const handleCancelEvent = async () => {
     if (!event?.id) return;
-    
+
     setIsUpdating(true);
     try {
       const { error } = await supabase
         .from('events')
-        .update({ 
+        .update({
           hasEnded: true,
         })
         .eq('id', event.id);
@@ -87,7 +88,7 @@ export function EventDetailsDrawer({
 
       // Call the callback to refresh the events list
       onEventUpdated?.();
-      
+
       // Close the drawer
       onClose();
     } catch (error: any) {
@@ -107,7 +108,7 @@ export function EventDetailsDrawer({
 
   const handleDeleteEvent = async () => {
     if (!event?.id) return;
-    
+
     setIsUpdating(true);
     try {
       const { error } = await supabase
@@ -129,7 +130,7 @@ export function EventDetailsDrawer({
 
       // Call the callback to refresh the events list
       onEventUpdated?.();
-      
+
       // Close the drawer
       onClose();
     } catch (error: any) {
@@ -176,7 +177,7 @@ export function EventDetailsDrawer({
       onClose={onClose}
       title="Event Details"
       size="lg"
-      // footer={footer}
+    // footer={footer}
     >
       <VStack spacing={6} align="stretch">
         <Box>
@@ -242,6 +243,26 @@ export function EventDetailsDrawer({
 
           <Box>
             <Text fontSize="sm" color={labelColor} mb={1}>
+              Banner Image
+            </Text>
+            <Box mt={3} position="relative" display="inline-block">
+              <Image
+                src={event.bannerImage}
+                alt="Banner preview"
+                maxH="200px"
+                maxW="100%"
+                objectFit="cover"
+                borderRadius="md"
+                border="1px solid"
+                borderColor="gray.200"
+              />
+            </Box>
+          </Box>
+
+
+
+          <Box>
+            <Text fontSize="sm" color={labelColor} mb={1}>
               Description
             </Text>
             <Text fontSize="md" color={valueColor} lineHeight="1.6">
@@ -279,9 +300,9 @@ export function EventDetailsDrawer({
             Quick Actions
           </Text>
           <VStack spacing={2} align="stretch">
-            <Button 
-              size="sm" 
-              variant="outline" 
+            <Button
+              size="sm"
+              variant="outline"
               colorScheme="blue"
               onClick={onEditOpen}
               isDisabled={event.hasEnded}
@@ -294,18 +315,18 @@ export function EventDetailsDrawer({
             <Button size="sm" variant="outline" colorScheme="green">
               Export Attendees
             </Button> */}
-            <Button 
-              size="sm" 
-              variant="outline" 
+            <Button
+              size="sm"
+              variant="outline"
               colorScheme="red"
               onClick={onAlertOpen}
               isDisabled={event.hasEnded}
             >
               {event.hasEnded ? 'Event ended' : 'End Event'}
             </Button>
-            <Button 
-              size="sm" 
-              variant="outline" 
+            <Button
+              size="sm"
+              variant="outline"
               colorScheme="red"
               onClick={onDeleteOpen}
             >
@@ -323,7 +344,7 @@ export function EventDetailsDrawer({
           </HStack>
         </Box>
       </VStack>
-      
+
       <AlertDialog
         isOpen={isAlertOpen}
         leastDestructiveRef={cancelRef}
@@ -343,8 +364,8 @@ export function EventDetailsDrawer({
               <Button ref={cancelRef} onClick={onAlertClose}>
                 Keep Event
               </Button>
-              <Button 
-                colorScheme="red" 
+              <Button
+                colorScheme="red"
                 onClick={handleCancelEvent}
                 ml={3}
                 isLoading={isUpdating}
@@ -356,7 +377,7 @@ export function EventDetailsDrawer({
           </AlertDialogContent>
         </AlertDialogOverlay>
       </AlertDialog>
-      
+
       <AlertDialog
         isOpen={isDeleteOpen}
         leastDestructiveRef={deleteRef}
@@ -376,8 +397,8 @@ export function EventDetailsDrawer({
               <Button ref={deleteRef} onClick={onDeleteClose}>
                 Keep Event
               </Button>
-              <Button 
-                colorScheme="red" 
+              <Button
+                colorScheme="red"
                 onClick={handleDeleteEvent}
                 ml={3}
                 isLoading={isUpdating}
@@ -389,7 +410,7 @@ export function EventDetailsDrawer({
           </AlertDialogContent>
         </AlertDialogOverlay>
       </AlertDialog>
-      
+
       <EditEventDrawer
         isOpen={isEditOpen}
         onClose={onEditClose}

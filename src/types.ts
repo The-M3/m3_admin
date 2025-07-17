@@ -11,4 +11,5 @@ export interface Event {
     hasEnded: boolean;       // Default: false
     created_at?: Date;         // Auto-generated
     updated_at?: Date;         // Auto-generated
+    bannerImage?: string;     // Optional
   }

@@ -17,11 +17,17 @@ import {
   WrapItem,
   Select,
   useToast,
-  FormErrorMessage
+  FormErrorMessage,
+  Progress,
+  Image,
+  Box,
+  IconButton
 } from '@chakra-ui/react';
 import { Drawer } from './Drawer';
 import { Event } from '@/types';
 import supabase from '../../supabase-client';
+import { BUCKET_NAME, EventFormData } from './CreateEventDrawer';
+import { TIMEZONES } from '@/constants';
 
 interface EditEventDrawerProps {
   isOpen: boolean;
@@ -30,37 +36,13 @@ interface EditEventDrawerProps {
   onEventUpdated?: (updatedEvent: Event) => void;
 }
 
-interface FormData {
-  title: string;
-  location: string;
-  startDateTime: string;
-  timezone: string;
-  description: string;
-  speakers: string[];
-  isVirtual: boolean;
-  ticketLink: string;
-}
-
 interface FormErrors {
   title?: string;
   location?: string;
   startDateTime?: string;
   description?: string;
+  bannerImage?: string;
 }
-
-const timezones = [
-  'UTC',
-  'America/New_York',
-  'America/Chicago',
-  'America/Denver',
-  'America/Los_Angeles',
-  'Europe/London',
-  'Europe/Paris',
-  'Europe/Berlin',
-  'Asia/Tokyo',
-  'Asia/Shanghai',
-  'Australia/Sydney'
-];
 
 export function EditEventDrawer({
   isOpen,
@@ -68,7 +50,7 @@ export function EditEventDrawer({
   event,
   onEventUpdated
 }: EditEventDrawerProps) {
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<EventFormData>({
     title: '',
     location: '',
     startDateTime: '',
@@ -76,13 +58,15 @@ export function EditEventDrawer({
     description: '',
     speakers: [],
     isVirtual: false,
-    ticketLink: ''
+    ticketLink: '',
+    bannerImage: ''
   });
   
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newSpeaker, setNewSpeaker] = useState('');
   const toast = useToast();
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   // Populate form when event changes
   useEffect(() => {
@@ -98,7 +82,8 @@ export function EditEventDrawer({
         description: event.description,
         speakers: [...event.speakers],
         isVirtual: event.isVirtual,
-        ticketLink: event.ticketLink || ''
+        ticketLink: event.ticketLink || '',
+        bannerImage: event.bannerImage || ''
       });
     }
   }, [event]);
@@ -126,7 +111,7 @@ export function EditEventDrawer({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (field: keyof FormData, value: string | boolean | string[]) => {
+  const handleInputChange = (field: keyof EventFormData, value: string | boolean | string[]) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -172,7 +157,8 @@ export function EditEventDrawer({
         description: event.description,
         speakers: [...event.speakers],
         isVirtual: event.isVirtual,
-        ticketLink: event.ticketLink || ''
+        ticketLink: event.ticketLink || '',
+        bannerImage: event.bannerImage || ''
       });
     }
     setErrors({});
@@ -199,7 +185,7 @@ export function EditEventDrawer({
         speakers: formData.speakers,
         isVirtual: formData.isVirtual,
         ticketLink: formData.ticketLink.trim() || undefined,
-        updated_at: new Date()
+        bannerImage: formData.bannerImage
       };
 
       const { data, error } = await supabase
@@ -239,6 +225,112 @@ export function EditEventDrawer({
       setIsSubmitting(false);
     }
   };
+
+    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (file) {
+        setIsUploadingImage(true);
+        // Validate file type
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+          setErrors(prev => ({
+            ...prev,
+            bannerImage: 'Please select a valid image file (JPEG, PNG, or WebP)'
+          }));
+          return;
+        }
+  
+        // Validate file size (max 5MB)
+        const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+        if (file.size > maxSize) {
+          setErrors(prev => ({
+            ...prev,
+            bannerImage: 'Image size must be less than 5MB'
+          }));
+          return;
+        }
+  
+        // Clear any previous errors
+        setErrors(prev => ({
+          ...prev,
+          bannerImage: undefined
+        }));
+  
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        const filePath = `${fileName}`
+  
+        // upload image to supabase
+        const { data, error } = await supabase.storage
+          .from(BUCKET_NAME)
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: false,
+          });
+  
+          console.log('Image uploaded successfully:', data);
+  
+  
+        if (error) {
+          console.error('Error uploading image:', error);
+          setErrors(prev => ({
+            ...prev,
+            bannerImage: 'Failed to upload image. Please try again.'
+          }));
+          return;
+        }
+  
+        const { data: publicUrlObj } = supabase.storage
+          .from(BUCKET_NAME)
+          .getPublicUrl(data.path);
+  
+        console.log("publicUrl", publicUrlObj);
+  
+  
+        // Update form data
+        handleInputChange('bannerImage', publicUrlObj?.publicUrl);
+  
+        // Create preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setIsUploadingImage(false);
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+  
+
+  const removeImage = async (filePath: string) => {
+    console.log("hello", filePath)
+    setIsUploadingImage(true);
+    handleInputChange('bannerImage', '');
+    // Reset the file input
+    const fileInput = document.getElementById('banner-image-input') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+
+    const urlParts = filePath.split('/public/'); // Splits into ["...", "event-banners/1752768022061.png"]
+    const pathAfterPublic = urlParts[1]; // "event-banners/1752768022061.png"
+
+    // Further split to get the path relative to the bucket root
+    const bucketNameFromUrl = pathAfterPublic.split('/')[0]; // "event-banners"
+    const relativeFilePath = pathAfterPublic.substring(bucketNameFromUrl.length + 1);
+    
+    const { error } = await supabase.storage
+    .from(BUCKET_NAME)
+    .remove([relativeFilePath]);
+    if (error) {
+      console.error('Error removing image:', error);
+      setErrors(prev => ({
+        ...prev,
+        bannerImage: 'Failed to remove image. Please try again.'
+      }));
+      return;
+    }
+    setIsUploadingImage(false);
+  };
+
 
   const footer = (
     <HStack spacing={3}>
@@ -304,7 +396,7 @@ export function EditEventDrawer({
             value={formData.timezone}
             onChange={(e) => handleInputChange('timezone', e.target.value)}
           >
-            {timezones.map((tz) => (
+            {TIMEZONES.map((tz) => (
               <option key={tz} value={tz}>
                 {tz}
               </option>
@@ -322,6 +414,50 @@ export function EditEventDrawer({
           />
           <FormErrorMessage>{errors.description}</FormErrorMessage>
         </FormControl>
+
+        <FormControl isInvalid={!!errors.bannerImage}>
+                  <FormLabel fontSize="sm" fontWeight="medium">
+                    Banner Image (Optional)
+                  </FormLabel>
+                 {!formData.bannerImage && <Input
+                    id="banner-image-input"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    size="md"
+                    p={1}
+                  />}
+                  <Text fontSize="xs" color="gray.500" mt={1}>
+                    Upload a banner image for your event (JPEG, PNG, or WebP, max 5MB)
+                  </Text>
+                  <FormErrorMessage>{errors.bannerImage}</FormErrorMessage>
+                  {isUploadingImage && <Progress colorScheme="green" size='xs' isIndeterminate />}
+                  {formData.bannerImage && (
+                    <Box mt={3} position="relative" display="inline-block">
+                      <Image
+                        src={formData.bannerImage}
+                        alt="Banner preview"
+                        maxH="200px"
+                        maxW="100%"
+                        objectFit="cover"
+                        borderRadius="md"
+                        border="1px solid"
+                        borderColor="gray.200"
+                      />
+                      <IconButton
+                        aria-label="Remove image"
+                        icon={<Text fontSize="lg">×</Text>}
+                        size="sm"
+                        colorScheme="red"
+                        position="absolute"
+                        top={2}
+                        right={2}
+                        onClick={() => removeImage(formData.bannerImage)}
+                        borderRadius="full"
+                      />
+                    </Box>
+                  )}
+                </FormControl>
 
         <FormControl>
           <FormLabel>Speakers</FormLabel>

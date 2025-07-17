@@ -19,11 +19,15 @@ import {
   Wrap,
   WrapItem,
   Box,
-  useToast
+  useToast,
+  Image,
+  IconButton,
+  Progress
 } from '@chakra-ui/react';
 import { Drawer } from './Drawer';
 import { Event } from '@/types';
 import supabase from '../../supabase-client';
+import { TIMEZONES } from '@/constants';
 
 interface CreateEventDrawerProps {
   isOpen: boolean;
@@ -31,7 +35,7 @@ interface CreateEventDrawerProps {
   onEventCreated?: (event: Event) => void;
 }
 
-interface FormData {
+export interface EventFormData {
   title: string;
   location: string;
   startDateTime: string;
@@ -40,6 +44,7 @@ interface FormData {
   speakers: string[];
   isVirtual: boolean;
   ticketLink: string;
+  bannerImage: string;
 }
 
 interface FormErrors {
@@ -47,7 +52,10 @@ interface FormErrors {
   location?: string;
   startDateTime?: string;
   description?: string;
+  bannerImage?: string;
 }
+
+export const BUCKET_NAME = 'event-banners';
 
 export function CreateEventDrawer({
   isOpen,
@@ -58,8 +66,10 @@ export function CreateEventDrawer({
   const labelColor = useColorModeValue('gray.700', 'gray.300');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [speakerInput, setSpeakerInput] = useState('');
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<EventFormData>({
     title: '',
     location: '',
     startDateTime: '',
@@ -67,14 +77,11 @@ export function CreateEventDrawer({
     description: '',
     speakers: [],
     isVirtual: false,
-    ticketLink: ''
+    ticketLink: '',
+    bannerImage: ''
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
-
-  const timezones = [
-    'WAT','EST', 'CST', 'MST', 'PST', 'GMT', 'CET', 'JST', 'AEST'
-  ];
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -99,7 +106,7 @@ export function CreateEventDrawer({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (field: keyof FormData, value: string | boolean) => {
+  const handleInputChange = (field: keyof EventFormData, value: string | boolean | File | null) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -111,6 +118,110 @@ export function CreateEventDrawer({
         ...prev,
         [field]: undefined
       }));
+    }
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setIsUploadingImage(true);
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        setErrors(prev => ({
+          ...prev,
+          bannerImage: 'Please select a valid image file (JPEG, PNG, or WebP)'
+        }));
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+      if (file.size > maxSize) {
+        setErrors(prev => ({
+          ...prev,
+          bannerImage: 'Image size must be less than 5MB'
+        }));
+        return;
+      }
+
+      // Clear any previous errors
+      setErrors(prev => ({
+        ...prev,
+        bannerImage: undefined
+      }));
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`
+
+      // upload image to supabase
+      const { data, error } = await supabase.storage
+        .from(BUCKET_NAME)
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+        console.log('Image uploaded successfully:', data);
+
+
+      if (error) {
+        console.error('Error uploading image:', error);
+        setErrors(prev => ({
+          ...prev,
+          bannerImage: 'Failed to upload image. Please try again.'
+        }));
+        return;
+      }
+
+      const { data: publicUrlObj } = supabase.storage
+        .from(BUCKET_NAME)
+        .getPublicUrl(data.path);
+
+      console.log("publicUrl", publicUrlObj);
+
+
+      // Update form data
+      handleInputChange('bannerImage', publicUrlObj?.publicUrl);
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(publicUrlObj?.publicUrl as string);
+        setIsUploadingImage(false);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = async (filePath: string) => {
+    console.log("hello", filePath)
+    handleInputChange('bannerImage', '');
+    setImagePreview('');
+    // Reset the file input
+    const fileInput = document.getElementById('banner-image-input') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+
+    const urlParts = filePath.split('/public/'); // Splits into ["...", "event-banners/1752768022061.png"]
+    const pathAfterPublic = urlParts[1]; // "event-banners/1752768022061.png"
+
+    // Further split to get the path relative to the bucket root
+    const bucketNameFromUrl = pathAfterPublic.split('/')[0]; // "event-banners"
+    const relativeFilePath = pathAfterPublic.substring(bucketNameFromUrl.length + 1);
+    
+    const { data, error } = await supabase.storage
+    .from(BUCKET_NAME)
+    .remove([relativeFilePath]);
+    if (error) {
+      console.error('Error removing image:', error);
+      setErrors(prev => ({
+        ...prev,
+        bannerImage: 'Failed to remove image. Please try again.'
+      }));
+      return;
     }
   };
 
@@ -139,6 +250,7 @@ export function CreateEventDrawer({
     setIsSubmitting(true);
 
     try {
+
       // Create the event object
       const newEvent: Event = {
         title: formData.title.trim(),
@@ -150,11 +262,12 @@ export function CreateEventDrawer({
         isVirtual: formData.isVirtual,
         ticketLink: formData.ticketLink.trim() || undefined,
         hasEnded: false,
+        bannerImage: formData.bannerImage,
       };
 
       // Insert into database first
       const { data, error } = await supabase.from('events').insert([newEvent]).select();
-      
+
       if (error) {
         console.error('Error creating event:', error);
         toast({
@@ -168,12 +281,12 @@ export function CreateEventDrawer({
       }
 
       console.log('Event created successfully:', data);
-      
+
       // Only call onEventCreated after successful database insert
       if (data && data[0]) {
         onEventCreated?.(data[0] as Event);
       }
-      
+
       toast({
         title: 'Event Created',
         description: `"${newEvent.title}" has been created successfully.`,
@@ -204,14 +317,21 @@ export function CreateEventDrawer({
       title: '',
       location: '',
       startDateTime: '',
-      timezone: 'EST',
+      timezone: 'WAT',
       description: '',
       speakers: [],
       isVirtual: false,
-      ticketLink: ''
+      ticketLink: '',
+      bannerImage: ''
     });
     setErrors({});
     setSpeakerInput('');
+    setImagePreview('');
+    // Reset the file input
+    const fileInput = document.getElementById('banner-image-input') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
   };
 
   const handleClose = () => {
@@ -293,7 +413,7 @@ export function CreateEventDrawer({
               onChange={(e) => handleInputChange('timezone', e.target.value)}
               size="md"
             >
-              {timezones.map(tz => (
+              {TIMEZONES.map(tz => (
                 <option key={tz} value={tz}>{tz}</option>
               ))}
             </Select>
@@ -312,6 +432,50 @@ export function CreateEventDrawer({
             resize="vertical"
           />
           <FormErrorMessage>{errors.description}</FormErrorMessage>
+        </FormControl>
+
+        <FormControl isInvalid={!!errors.bannerImage}>
+          <FormLabel color={labelColor} fontSize="sm" fontWeight="medium">
+            Banner Image (Optional)
+          </FormLabel>
+          <Input
+            id="banner-image-input"
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            size="md"
+            p={1}
+          />
+          <Text fontSize="xs" color="gray.500" mt={1}>
+            Upload a banner image for your event (JPEG, PNG, or WebP, max 5MB)
+          </Text>
+          <FormErrorMessage>{errors.bannerImage}</FormErrorMessage>
+          {isUploadingImage && <Progress colorScheme="green" size='xs' isIndeterminate />}
+          {imagePreview && (
+            <Box mt={3} position="relative" display="inline-block">
+              <Image
+                src={imagePreview}
+                alt="Banner preview"
+                maxH="200px"
+                maxW="100%"
+                objectFit="cover"
+                borderRadius="md"
+                border="1px solid"
+                borderColor="gray.200"
+              />
+              <IconButton
+                aria-label="Remove image"
+                icon={<Text fontSize="lg">×</Text>}
+                size="sm"
+                colorScheme="red"
+                position="absolute"
+                top={2}
+                right={2}
+                onClick={() => removeImage(formData.bannerImage)}
+                borderRadius="full"
+              />
+            </Box>
+          )}
         </FormControl>
 
         <FormControl>
