@@ -301,7 +301,7 @@ export function EventDetailsDrawer({
               onClick={onAlertOpen}
               isDisabled={event.hasEnded}
             >
-              {event.hasEnded ? 'Event Cancelled' : 'Cancel Event'}
+              {event.hasEnded ? 'Event ended' : 'End Event'}
             </Button>
             <Button 
               size="sm" 
