@@ -371,7 +371,7 @@ export function EventDetailsDrawer({
                 isLoading={isUpdating}
                 loadingText="Cancelling..."
               >
-                Cancel Event
+                End Event
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>
