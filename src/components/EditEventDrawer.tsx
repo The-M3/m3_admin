@@ -22,8 +22,8 @@ import {
   Box,
   IconButton
 } from '@chakra-ui/react';
-import { Editor } from 'react-draft-wysiwyg';
 import { EditorState, convertToRaw, convertFromRaw, ContentState } from 'draft-js';
+import { DynamicEditor } from './DynamicEditor';
 import 'react-draft-wysiwyg/dist/react-draft-wysiwyg.css';
 import 'draft-js/dist/Draft.css';
 import { Drawer } from './Drawer';
@@ -429,7 +429,7 @@ export function EditEventDrawer({
         <FormControl isInvalid={!!errors.description}>
           <FormLabel>Description</FormLabel>
           <Box border="1px solid" borderColor="gray.200" borderRadius="md">
-            <Editor
+            <DynamicEditor
               editorState={editorState}
               onEditorStateChange={(editorState: EditorState) => {
                 setEditorState(editorState);

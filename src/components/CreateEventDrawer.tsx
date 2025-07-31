@@ -23,8 +23,8 @@ import {
   IconButton,
   Progress
 } from '@chakra-ui/react';
-import { Editor } from 'react-draft-wysiwyg';
 import { EditorState, convertToRaw } from 'draft-js';
+import { DynamicEditor } from './DynamicEditor';
 import 'react-draft-wysiwyg/dist/react-draft-wysiwyg.css';
 import 'draft-js/dist/Draft.css';
 
@@ -436,7 +436,7 @@ export function CreateEventDrawer({
             Description
           </FormLabel>
           <Box border="1px solid" borderColor="gray.200" borderRadius="md">
-            <Editor
+            <DynamicEditor
               editorState={editorState}
               onEditorStateChange={(editorState: EditorState) => {
                 setEditorState(editorState);
@@ -450,9 +450,6 @@ export function CreateEventDrawer({
                 options: ['inline', 'list', 'textAlign', 'history'],
                 inline: {
                   options: ['bold', 'italic', 'underline']
-                },
-                blockType: {
-                  options: ['Normal', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6']
                 },
                 list: {
                   options: ['unordered', 'ordered']
