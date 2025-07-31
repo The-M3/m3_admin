@@ -23,6 +23,7 @@ import {
 import { useRef, useState } from 'react';
 import { Drawer } from './Drawer';
 import { EditEventDrawer } from './EditEventDrawer';
+import { RichTextRenderer } from './RichTextRenderer';
 import { Event } from '@/types';
 import supabase from '../../supabase-client';
 
@@ -265,9 +266,9 @@ export function EventDetailsDrawer({
             <Text fontSize="sm" color={labelColor} mb={1}>
               Description
             </Text>
-            <Text fontSize="md" color={valueColor} lineHeight="1.6">
-              {event.description}
-            </Text>
+            <RichTextRenderer 
+              content={event.description} 
+            />
           </Box>
 
           {event.speakers.length > 0 && (

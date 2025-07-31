@@ -3,6 +3,7 @@ import { Roboto_Condensed } from 'next/font/google'
 import { Providers } from "./providers";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import "./globals.css";
 
 const roboto_condensed = Roboto_Condensed({
   subsets: ['latin'],

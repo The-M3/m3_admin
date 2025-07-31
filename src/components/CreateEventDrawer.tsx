@@ -7,7 +7,6 @@ import {
   FormControl,
   FormLabel,
   Input,
-  Textarea,
   Switch,
   Button,
   useColorModeValue,
@@ -24,10 +23,16 @@ import {
   IconButton,
   Progress
 } from '@chakra-ui/react';
+import { Editor } from 'react-draft-wysiwyg';
+import { EditorState, convertToRaw } from 'draft-js';
+import 'react-draft-wysiwyg/dist/react-draft-wysiwyg.css';
+import 'draft-js/dist/Draft.css';
+
 import { Drawer } from './Drawer';
 import { Event } from '@/types';
 import supabase from '../../supabase-client';
 import { TIMEZONES } from '@/constants';
+
 
 interface CreateEventDrawerProps {
   isOpen: boolean;
@@ -68,6 +73,9 @@ export function CreateEventDrawer({
   const [speakerInput, setSpeakerInput] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [editorState, setEditorState] = React.useState(
+    EditorState.createEmpty()
+  );
 
   const [formData, setFormData] = useState<EventFormData>({
     title: '',
@@ -80,6 +88,8 @@ export function CreateEventDrawer({
     ticketLink: '',
     bannerImage: ''
   });
+
+
 
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -163,7 +173,7 @@ export function CreateEventDrawer({
           upsert: false,
         });
 
-        console.log('Image uploaded successfully:', data);
+      console.log('Image uploaded successfully:', data);
 
 
       if (error) {
@@ -211,10 +221,10 @@ export function CreateEventDrawer({
     // Further split to get the path relative to the bucket root
     const bucketNameFromUrl = pathAfterPublic.split('/')[0]; // "event-banners"
     const relativeFilePath = pathAfterPublic.substring(bucketNameFromUrl.length + 1);
-    
+
     const { data, error } = await supabase.storage
-    .from(BUCKET_NAME)
-    .remove([relativeFilePath]);
+      .from(BUCKET_NAME)
+      .remove([relativeFilePath]);
     if (error) {
       console.error('Error removing image:', error);
       setErrors(prev => ({
@@ -327,6 +337,7 @@ export function CreateEventDrawer({
     setErrors({});
     setSpeakerInput('');
     setImagePreview('');
+    setEditorState(EditorState.createEmpty());
     // Reset the file input
     const fileInput = document.getElementById('banner-image-input') as HTMLInputElement;
     if (fileInput) {
@@ -424,13 +435,36 @@ export function CreateEventDrawer({
           <FormLabel color={labelColor} fontSize="sm" fontWeight="medium">
             Description
           </FormLabel>
-          <Textarea
-            value={formData.description}
-            onChange={(e) => handleInputChange('description', e.target.value)}
-            placeholder="Enter event description"
-            rows={4}
-            resize="vertical"
-          />
+          <Box border="1px solid" borderColor="gray.200" borderRadius="md">
+            <Editor
+              editorState={editorState}
+              onEditorStateChange={(editorState: EditorState) => {
+                setEditorState(editorState);
+                // Convert editor content to raw format to preserve formatting
+                const contentState = editorState.getCurrentContent();
+                const rawContentState = convertToRaw(contentState);
+                handleInputChange('description', JSON.stringify(rawContentState));
+              }}
+              placeholder="Enter event description"
+              toolbar={{
+                options: ['inline', 'list', 'textAlign', 'history'],
+                inline: {
+                  options: ['bold', 'italic', 'underline']
+                },
+                blockType: {
+                  options: ['Normal', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6']
+                },
+                list: {
+                  options: ['unordered', 'ordered']
+                }
+              }}
+              editorStyle={{
+                minHeight: '200px',
+                padding: '10px',
+                border: 'none'
+              }}
+            />
+          </Box>
           <FormErrorMessage>{errors.description}</FormErrorMessage>
         </FormControl>
 

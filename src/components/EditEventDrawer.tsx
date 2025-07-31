@@ -6,7 +6,6 @@ import {
   FormControl,
   FormLabel,
   Input,
-  Textarea,
   Switch,
   Button,
   Text,
@@ -23,6 +22,10 @@ import {
   Box,
   IconButton
 } from '@chakra-ui/react';
+import { Editor } from 'react-draft-wysiwyg';
+import { EditorState, convertToRaw, convertFromRaw, ContentState } from 'draft-js';
+import 'react-draft-wysiwyg/dist/react-draft-wysiwyg.css';
+import 'draft-js/dist/Draft.css';
 import { Drawer } from './Drawer';
 import { Event } from '@/types';
 import supabase from '../../supabase-client';
@@ -67,6 +70,9 @@ export function EditEventDrawer({
   const [newSpeaker, setNewSpeaker] = useState('');
   const toast = useToast();
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [editorState, setEditorState] = useState(
+    EditorState.createEmpty()
+  );
 
   // Populate form when event changes
   useEffect(() => {
@@ -85,6 +91,22 @@ export function EditEventDrawer({
         ticketLink: event.ticketLink || '',
         bannerImage: event.bannerImage || ''
       });
+      
+      // Initialize editor state with existing description
+      if (event.description) {
+        try {
+          // Try to parse as raw content state (JSON)
+          const rawContentState = JSON.parse(event.description);
+          const contentState = convertFromRaw(rawContentState);
+          setEditorState(EditorState.createWithContent(contentState));
+        } catch (error) {
+          // Fallback to plain text if parsing fails (for backward compatibility)
+          const contentState = ContentState.createFromText(event.description);
+          setEditorState(EditorState.createWithContent(contentState));
+        }
+      } else {
+        setEditorState(EditorState.createEmpty());
+      }
     }
   }, [event]);
 
@@ -406,12 +428,33 @@ export function EditEventDrawer({
 
         <FormControl isInvalid={!!errors.description}>
           <FormLabel>Description</FormLabel>
-          <Textarea
-            value={formData.description}
-            onChange={(e) => handleInputChange('description', e.target.value)}
-            placeholder="Enter event description"
-            rows={4}
-          />
+          <Box border="1px solid" borderColor="gray.200" borderRadius="md">
+            <Editor
+              editorState={editorState}
+              onEditorStateChange={(editorState: EditorState) => {
+                setEditorState(editorState);
+                // Convert editor content to raw format to preserve formatting
+                const contentState = editorState.getCurrentContent();
+                const rawContentState = convertToRaw(contentState);
+                handleInputChange('description', JSON.stringify(rawContentState));
+              }}
+              placeholder="Enter event description"
+              toolbar={{
+                options: ['inline', 'list', 'textAlign', 'history'],
+                inline: {
+                  options: ['bold', 'italic', 'underline']
+                },
+                list: {
+                  options: ['unordered', 'ordered']
+                }
+              }}
+              editorStyle={{
+                minHeight: '200px',
+                padding: '10px',
+                border: 'none'
+              }}
+            />
+          </Box>
           <FormErrorMessage>{errors.description}</FormErrorMessage>
         </FormControl>
 
