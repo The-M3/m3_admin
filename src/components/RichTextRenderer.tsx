@@ -34,6 +34,42 @@ export function RichTextRenderer({ content, className }: RichTextRendererProps) 
     <Box
       className={className}
       dangerouslySetInnerHTML={{ __html: htmlContent }}
+      sx={{
+        '& ul': {
+          listStyleType: 'disc',
+          paddingLeft: '1.5rem',
+          marginBottom: '1rem',
+          marginTop: '0.5rem',
+        },
+        '& ol': {
+          listStyleType: 'decimal',
+          paddingLeft: '1.5rem',
+          marginBottom: '1rem',
+          marginTop: '0.5rem',
+        },
+        '& li': {
+          marginBottom: '0.25rem',
+          lineHeight: '1.5',
+        },
+        // '& p': {
+        //   marginBottom: '1rem',
+        //   lineHeight: '1.6',
+        // },
+        // '& h1, & h2, & h3, & h4, & h5, & h6': {
+        //   fontWeight: 'bold',
+        //   marginBottom: '0.5rem',
+        //   marginTop: '1rem',
+        // },
+        // '& h1': { fontSize: '2xl' },
+        // '& h2': { fontSize: 'xl' },
+        // '& h3': { fontSize: 'lg' },
+        // '& h4': { fontSize: 'md' },
+        // '& h5': { fontSize: 'sm' },
+        // '& h6': { fontSize: 'xs' },
+        // '& strong': { fontWeight: 'bold' },
+        // '& em': { fontStyle: 'italic' },
+        // '& u': { textDecoration: 'underline' },
+      }}
     />
   );
 }
